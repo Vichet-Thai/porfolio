@@ -1,18 +1,18 @@
 import argparse
 import requests
 import sys
+import json
 
 
 def main():
     username = fetch_username()
     events = fetch_events(username)
     if not events:
-        print("No recent public activity has been found.")
+        sys.exit("No recent public activity has been found.")
 
-    for event in events:
-        print(event["type"])
-        print(event["repo"]["name"])
-        print(event["created_at"])
+    # print(json.dumps(events, indent=4))
+    display_events(events)
+
 
 
 def fetch_events(username):
@@ -26,7 +26,7 @@ def fetch_events(username):
     except requests.exceptions.ConnectionError:
         sys.exit("Unable to establish a connection")
     except requests.exceptions.Timeout:
-        sys.exit("The request has timeouted")
+        sys.exit("The request timed out.")
     except requests.exceptions.RequestException:
         sys.exit("An issue has been encountered")
 
@@ -36,6 +36,21 @@ def fetch_username():
     parser.add_argument("username", help="enter a github username", type=str)
     args = parser.parse_args()
     return args.username
+
+def display_events(events):
+    for event in events:
+        event_type = event["type"]
+        repo_name = event["repo"]["name"]
+
+        if event_type == "PushEvent":
+            print(f"Pushed commits to {repo_name}")
+            print(event["payload"])
+        elif event_type == "WatchEvent":
+            print(f"Starred {repo_name}")
+            print(event["payload"])
+        else:
+            print(f"Performed {event_type} in {repo_name}")
+            print(event["payload"])
 
 
 if __name__ == "__main__":
